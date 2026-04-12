@@ -23,4 +23,4 @@ gemm: $(SRCS)
 clean:
 	$(RM) gemm
 
-include ../common/makefile.inc
+include ../../common/makefile.inc
