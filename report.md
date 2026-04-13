@@ -17,10 +17,11 @@ Due to k being the innermost loop, matrix B is iterated by row first, then colum
 - **Reasoning:** In the $i, k, j$ order, both matrix A and matrix B are iterated by column first, so the cache locality is maximized during matrix multiplication. Parallelizing the $i$ loop allowed for each row of the output matrix C to be computed in parallel.
 
 ### 1.2 GemmParallelBlocked
-To further improve performance (change)
+The problem with the non-blocked parallel version from `omp.cpp` is that for each row of matrix C that is computed, the processor has to read the entirety of matrix B. Once the outer loop $i$ is iterated, all of matrix B will need to be read again. This means that each thread is reading the entirety of matrix B within its loops.
+Instead of using 1 row of A and all of B per thread, we can use a small block of A and a small block of B to compute the partial matrix product for that block in C. This will better utilize the cache (memory locality) by avoiding fetching the entire matrix B per thread.
 
-- **Block Size chosen:** $B = [e.g., 64]$
-- **Reasoning:** 
+- **Block Size chosen:** $B = [64]$
+- **Reasoning:** Intel Xeon Platinum 8175M 24-core CPU (a custom model for Amazon AWS), each thread has its own L1d 32KiB Cache. 32KiB = 32768 bytes --> since a block of A and a block of B is needed, calculate half of the space 32768 bytes / 2 = 16384 bytes --> 16384 bytes of space fits how many words (a word is 32 bits or 4 bytes): 16384 bytes / 4 bytes = 4096 words --> 4096 words is a 64 x 64 block of words.
 - **Implementation:** 
 
 ---
