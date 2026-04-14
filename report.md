@@ -22,7 +22,7 @@ Instead of using 1 row of A and all of B per thread, we can use a small block of
 
 - **Block Size chosen:** $B = [64]$
 - **Reasoning:** Intel Xeon Platinum 8175M 24-core CPU (a custom model for Amazon AWS), each thread has its own L1d 32KiB Cache. 32KiB = 32768 bytes --> since a block of A and a block of B is needed, calculate half of the space 32768 bytes / 2 = 16384 bytes --> 16384 bytes of space fits how many words (a word is 32 bits or 4 bytes): 16384 bytes / 4 bytes = 4096 words --> 4096 words is a 64 x 64 block of words.
-- **Implementation:** 
+- **Implementation:** Block size (and number of blocks) is stored for calculations before any loops or parallelization. The first two loops are for iterating through result matrix C, and it's parallelized using `#pragma omp parallel for collapse(2)` so each thread can work on its own block of C. The following loop is used to iterate over A and B (by block), giving the block offset. The final 3 inner loops are the $i, k, j$ ordered matrix multiplication from `omp.cpp`, adjusted for the tiling format.
 
 ---
 
@@ -41,6 +41,6 @@ The following results were obtained on the **m5.2xlarge** AWS instance with a pr
 ---
 
 ## 3. Analysis and Observations
-- **Scaling:** [Discuss how the performance improved when moving from sequential to parallel].
-- **Cache Impact:** [Discuss the jump in GFlops after implementing blocking].
-- **Challenges:** [e.g., Mention the initial Makefile path issues or choosing the optimal block size].
+- **Scaling:** Adding parallelism to the sequential version of GEMM allowed for multiple cores to calculate the result at the same time, combining the overall result to receive matrix C. This change provided a major performance improvement. 
+- **Cache Impact:** Through implementing blocking, the GFlops even on just my local machine jumped up by over 100. Splitting up C by blocks, having each thread calculate the result for that block of C, and grabbing blocks of A and B from memory instead of full rows/columns at a time all increased the performance significantly. These changes maximized cache locality between cores, providing a worthwile speedup.
+- **Challenges:** Trying to wrap my head around the full process for blocked parallel matrix multiplication was difficult. I ended up making a couple different drawings to visually grasp the order of operations/loops, as well as where each variable ends up after a calculation. Once I broke the problem down, I was able to work through it sequentially to best optimize performance. 
