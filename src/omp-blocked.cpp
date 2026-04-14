@@ -6,13 +6,27 @@
 // Using declarations, if any...
 
 void GemmParallelBlocked(const float a[kI][kK], const float b[kK][kJ], float c[kI][kJ]) {
-  const int blockSize = 64; // sqrt((32KiB cache size) / (2 matrices * 4 bytes per word))
-  for (int c_i = 0; c_i < kI; c_i += blockSize) {
-    for (int c_j = 0; c_j < kJ; c_j += blockSize) {
-    #pragma omp parallel for
-      // iterate through blocks of A and B to get corresponding block of C 
-      // if thread 1 is working on block (0, 0) of C, it will iterate through blocks (0, 0), (0, 1), ..., of A and (0, 0), (1, 0), ..., of B
-      // each thread is utilizing the cache by working on a block of C and corresponding blocks of A and B
+  const int block_size = 64; // sqrt((32KiB cache size) / (2 matrices * 4 bytes per word))
+  const int num_blocks = kK / block_size;
+  
+  #pragma omp parallel for collapse(2)// each thread works on a block of C
+  for (int c_i = 0; c_i < kI; c_i += block_size) {
+    for (int c_j = 0; c_j < kJ; c_j += block_size) {
+      // in a thread: working on block (c_i, c_j) of C
+
+      // iterate horizontally through A blocks ==> vertically through B blocks
+      for (int block_iter = 0; block_iter < num_blocks; block_iter++) {
+        int block_offset = block_iter * block_size;
+
+        // iterate through the block of A and B, and update the block of C
+        for (int i = 0; i < block_size; i++) {
+          for (int k = 0; k < block_size; k++) {
+            for (int j = 0; j < block_size; j++) {
+              c[c_i + i][c_j + j] += a[c_i + i][k + block_offset] * b[k + block_offset][c_j + j];
+            }
+          }
+        }
+      }
     }
   }
 }
