@@ -3,7 +3,7 @@
 
 #include <vector>
 
-const int kN = 4096;
+const int kN = 4096; //1024, 2048, or 4096
 const int kI = kN;
 const int kJ = kN;
 const int kK = kN;
