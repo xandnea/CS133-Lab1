@@ -22,13 +22,13 @@ void GemmParallelBlocked(const float a[kI][kK], const float b[kK][kJ], float c[k
         // iterate through the block of A and B, and update the block of C
         for (int i = 0; i < block_size; i++) {
           // pointer for row of C and row of A
-          float* row_c = &c[c_i + i][c_j];
-          const float* row_a = &a[c_i + i][block_offset];
+          float* __restrict__ row_c = &c[c_i + i][c_j];
+          const float* __restrict__ row_a = &a[c_i + i][block_offset];
 
           for (int k = 0; k < block_size; k++) {
             // same as above, hoisting a_ik and row_b
             float a_ik = row_a[k];
-            const float* row_b = &b[block_offset + k][c_j];
+            const float* __restrict__ row_b = &b[block_offset + k][c_j];
 
             #pragma omp simd // vectorize the innermost loop across j
             for (int j = 0; j < block_size; j++) {
