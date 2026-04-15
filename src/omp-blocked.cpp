@@ -22,7 +22,10 @@ void GemmParallelBlocked(const float a[kI][kK], const float b[kK][kJ], float c[k
         for (int i = 0; i < block_size; i++) {
           for (int k = 0; k < block_size; k++) {
             for (int j = 0; j < block_size; j++) {
-              c[c_i + i][c_j + j] += a[c_i + i][k + block_offset] * b[k + block_offset][c_j + j];
+              // hoist a[c_i + i][k + block_offset] out of the innermost loop since it doesn't change across j
+              const float a_ik = a[c_i + i][k + block_offset];
+
+              c[c_i + i][c_j + j] += a_ik * b[k + block_offset][c_j + j];
             }
           }
         }
