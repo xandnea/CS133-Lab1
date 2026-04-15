@@ -21,10 +21,11 @@ void GemmParallelBlocked(const float a[kI][kK], const float b[kK][kJ], float c[k
         // iterate through the block of A and B, and update the block of C
         for (int i = 0; i < block_size; i++) {
           for (int k = 0; k < block_size; k++) {
-            for (int j = 0; j < block_size; j++) {
-              // hoist a[c_i + i][k + block_offset] out of the innermost loop since it doesn't change across j
-              const float a_ik = a[c_i + i][k + block_offset];
+            // hoist a[c_i + i][k + block_offset] out of the innermost loop since it doesn't change across j
+            const float a_ik = a[c_i + i][k + block_offset];
 
+            #pragma omp simd // vectorize the innermost loop across j
+            for (int j = 0; j < block_size; j++) {
               c[c_i + i][c_j + j] += a_ik * b[k + block_offset][c_j + j];
             }
           }
