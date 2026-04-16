@@ -7,10 +7,10 @@
 
 void GemmParallelBlocked(const float a[kI][kK], const float b[kK][kJ], float c[kI][kJ]) {
   // sqrt((32KiB cache size) / (2 matrices * 4 bytes per word))
-  const int block_size = 128; // was 64, testing higher for Xeon L2 cache
+  const int block_size = 64; // was 64, testing other values for Xeon L2 cache
   const int num_blocks = kK / block_size;
   
-  #pragma omp parallel for collapse(2)// each thread works on a block of C
+  #pragma omp parallel for schedule(static) //collapse(2) // each thread works on a block of C
   for (int c_i = 0; c_i < kI; c_i += block_size) {
     for (int c_j = 0; c_j < kJ; c_j += block_size) {
       // in a thread: working on block (c_i, c_j) of C
