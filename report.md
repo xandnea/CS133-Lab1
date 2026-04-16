@@ -1,6 +1,5 @@
 # CS 133 Lab 1 Report: High-Performance GEMM
 **Name:** Alexander Neary  
-**UID:** 805935345  
 **Date:** April 2026  
 
 ---
@@ -36,25 +35,38 @@ The following loop is used to iterate over A and B (by block), giving the block 
 Other improvements:
         - Row pointers to utilize local memory more efficiently.
         - Loop unrolling to do more calculations per memory access.
-
-- **Performance Increase:** (On my local machine, 2048 x 2048 x 2048)
+- **Performance Increase:** (Local Machine, 2048 x 2048 x 2048)
         Parallel GEMM: ~170 GFlops 
         vs
         Parallel-Blocked GEMM: ~410 GFlops
-
+        - **Increase per optimization** (AWS m5.2xlarge Instance, 4096 x 4096 x 4096):
+                - *Tiling/Blocking (Block Size 64):* ~35 --> ~60 GFlops (utilizing loop permutation, aka the $i, k, j$ loop order).
+                - *Value Hoisting:* ~60 --> ~65 GFlops
+                - *SIMD Vectorization (`#pragma omp simd`)*: ~65 --> ~70 GFlops
+                - *Loop Unrolling (2 Way):* ~70 --> ~80 GFlops
+                - *Local Memory (Row Pointers):* ~80 --> ~87 GFlops
+                - *Block Size Update (128 instead of 64):* ~87 --> ~95 GFlops
+- **Scalability w/ Different Threads:** As mentioned above, the m5.2xlarge instance has 8 vCPUs which equates to 4 physical cores with hyperthreading (essentially 8 virtual cores/threads).
+        - *num_threads(1):* ~14 GFlops
+        - *num_threads(2):* ~35 GFlops
+        - *num_threads(4):* ~50 GFlops
+        - *num_threads(6):* ~65 GFlops
+        - *num_threads(8):* ~90 GFlops
+        - *num_threads(10):* ~60 GFlops
 ---
 
 ## 2. Performance Evaluation
 
 The following results were obtained on the **m5.2xlarge** AWS instance with a problem size of $4096^3$.
 
-| Version | GFlops | Time (s) | Execution Mode |
-| :--- | :---: | :---: | :--- |
-| Sequential (Baseline) | [Value] | [Value] | Single Thread |
-| GemmParallel | [Value] | [Value] | OpenMP Multi-thread |
-| GemmParallelBlocked | [Value] | [Value] | OpenMP + Tiling |
+| Version               | GFlops    | Time (s)  | Execution Mode      |
+|-----------------------|-----------|-----------|---------------------|
+| Sequential (Baseline) | [0.2441]  | [562.924] | Single Thread       |
+| GemmParallel          | [36.8627] | [3.7284]  | OpenMP Multi-thread |
+| GemmParallelBlocked   | [99.5091] | [1.38117] | OpenMP + Tiling     |
+|-----------------------|-----------|-----------|---------------------|
 
-**Performance Range achieved:** 
+**Performance Range achieved: A** 
 
 ---
 
